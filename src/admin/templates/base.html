@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dream Admin{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="flex min-h-screen">
+    <aside class="w-56 bg-gray-900 text-gray-100 flex flex-col">
+      <div class="px-5 py-4 text-lg font-semibold border-b border-gray-700">
+        <i class="fa-solid fa-moon mr-2"></i>Dream Admin
+      </div>
+      <nav class="flex-1 px-2 py-4 space-y-1">
+        <a href="/subscribers" class="block px-3 py-2 rounded hover:bg-gray-700">
+          <i class="fa-solid fa-users mr-2"></i>Подписчики
+        </a>
+      </nav>
+      <form method="post" action="/logout" class="px-2 py-4 border-t border-gray-700">
+        <button type="submit" class="w-full text-left px-3 py-2 rounded hover:bg-gray-700">
+          <i class="fa-solid fa-right-from-bracket mr-2"></i>Выйти
+        </button>
+      </form>
+    </aside>
+    <main class="flex-1 p-6">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

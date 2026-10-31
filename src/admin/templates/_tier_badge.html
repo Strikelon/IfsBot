@@ -1,0 +1,14 @@
+{# Значок у аватара. badge — результат admin.utils.*_badge (в нём есть corner).
+   Три значка (тир / пейвол / интервью) занимают разные углы и не перетирают друг друга. #}
+{% macro tier_badge(badge, size='sm') -%}
+{%- if badge %}
+{%- set corners = {
+      'top-right': '-top-0.5 -right-0.5',
+      'bottom-right': '-bottom-0.5 -right-0.5',
+      'top-left': '-top-0.5 -left-0.5',
+    } %}
+<span class="absolute {{ corners[badge.get('corner', 'top-right')] }} rounded-full text-white font-bold flex items-center justify-center ring-2 ring-white
+             {{ badge.bg }} {{ 'w-3.5 h-3.5 text-[9px]' if size == 'sm' else 'w-6 h-6 text-xs' }}"
+      title="{{ badge.title }}">{{ badge.symbol }}</span>
+{%- endif %}
+{%- endmacro %}

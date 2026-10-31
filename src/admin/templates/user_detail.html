@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% from "_tier_badge.html" import tier_badge %}
+{% block title %}{{ u.display_name or '—' }} — Dream Admin{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="/subscribers" class="text-sm text-gray-500 hover:underline">
+    <i class="fa-solid fa-arrow-left mr-1"></i>К подписчикам
+  </a>
+</div>
+
+<div class="flex gap-6 items-start">
+  <!-- LEFT: profile -->
+  <div class="w-80 shrink-0 bg-white rounded-lg shadow p-5">
+    {% set badge = access_badge(u.access_tier, u.access_tier_until) %}
+    <div class="flex flex-col items-center text-center">
+      <span class="relative inline-flex items-center justify-center w-20 h-20 rounded-full text-white text-2xl font-semibold"
+            style="background-color: {{ color(u.display_name) }}">{{ initials(u.display_name) }}<img
+            src="/users/{{ u.telegram_user_id }}/avatar" alt=""
+            class="absolute inset-0 w-20 h-20 rounded-full object-cover"
+            onerror="this.remove()">{{ tier_badge(badge, 'lg') }}{{ tier_badge(paywall_badge(u.paywall_shown_at), 'lg') }}{{ tier_badge(interview_badge(u.interview_passed_at), 'lg') }}</span>
+      <div class="mt-3 text-lg font-semibold text-gray-900">{{ u.display_name or '—' }}</div>
+      {% if u.username %}
+      <a href="https://t.me/{{ u.username }}" class="text-sm text-gray-400 hover:underline">@{{ u.username }}</a>
+      {% endif %}
+      <div class="mt-1 text-sm">
+        {% if u.is_active %}🟢 Активен{% else %}⚪ Неактивен{% endif %}
+      </div>
+    </div>
+
+    <dl class="mt-5 space-y-2 text-sm">
+      <div class="flex justify-between"><dt class="text-gray-500">Telegram ID</dt><dd>{{ u.telegram_user_id }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Снов / Вопросов</dt><dd>{{ u.dreams_count }} / {{ u.questions_count }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Ситуаций / Вопросов</dt><dd>{{ u.situations_count }} / {{ u.situation_questions_count }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Конфликтов / Вопросов</dt><dd>{{ u.conflicts_count }} / {{ u.conflict_questions_count }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Нейросеть</dt><dd>{{ fmt_usd(u.cost_usd) }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Последний контакт</dt><dd>{{ fmt_date(u.last_seen_at) }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Подписался</dt><dd>{{ u.created_at.strftime('%d.%m.%Y') }}</dd></div>
+      <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Доступ</dt><dd class="text-right">{{ access }}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Пейвол</dt>
+        <dd>{% if u.paywall_shown_at %}✅ {{ u.paywall_shown_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</dd></div>
+      <div class="flex justify-between"><dt class="text-gray-500">Интервью</dt>
+        <dd>{% if u.interview_passed_at %}✅ {{ u.interview_passed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}</dd></div>
+    </dl>
+    {% if u.spend_reset_at %}
+    <div class="mt-2 text-xs text-gray-400">
+      Потрачено {{ fmt_usd(u.cost_usd) }} всего · {{ fmt_usd(u.cost_since_reset) }} с момента
+      сброса {{ u.spend_reset_at.strftime('%d.%m.%Y') }}
+    </div>
+    {% endif %}
+
+    <div class="mt-5 pt-4 border-t border-gray-100">
+      <div class="text-sm text-gray-500 mb-2">Статус доступа</div>
+      {% set is_interview = (u.access_tier == 'free_interview') %}
+      <div class="grid grid-cols-2 gap-1">
+        {% for value, label in [('regular', 'Обычный тестер'), ('interview', 'Интервью')] %}
+        <button type="button" onclick="setTier('{{ value }}')"
+                class="text-xs rounded px-2 py-2 border {% if (value == 'interview') == is_interview %}bg-gray-900 text-white border-gray-900{% else %}border-gray-300 text-gray-700 hover:bg-gray-100{% endif %}">
+          {{ label }}
+        </button>
+        {% endfor %}
+      </div>
+      <div class="mt-1 text-xs text-gray-400">Интервью даёт безлимит на 2 месяца от сегодня.
+        «Обычный тестер» возвращает прежний тир, значок первого тестера сохраняется.</div>
+      <div id="tier-error" class="hidden mt-1 text-xs text-red-600"></div>
+    </div>
+
+    <div id="delete-block" class="mt-6 pt-4 border-t border-gray-100">
+      <button type="button" id="delete-btn" onclick="startDelete()"
+              class="w-full text-sm text-red-600 border border-red-200 rounded px-3 py-2 hover:bg-red-50">
+        <i class="fa-solid fa-trash mr-1"></i>Удалить пользователя
+      </button>
+      <div id="delete-confirm" class="hidden mt-2 text-sm">
+        <p class="text-gray-600 mb-2">Удалить безвозвратно? Все данные пользователя будут стёрты.</p>
+        <div class="flex gap-2">
+          <button type="button" onclick="confirmDelete()"
+                  class="flex-1 bg-red-600 text-white rounded px-3 py-2 hover:bg-red-700">Да, удалить</button>
+          <button type="button" onclick="cancelDelete()"
+                  class="flex-1 bg-gray-200 rounded px-3 py-2 hover:bg-gray-300">Отмена</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const TG_ID = {{ u.telegram_user_id }};
+
+  async function setTier(tier) {
+    const err = document.getElementById('tier-error');
+    err.classList.add('hidden');
+    const resp = await fetch('/api/users/' + TG_ID + '/tier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier: tier })
+    });
+    if (resp.ok) { location.reload(); return; }
+    err.textContent = 'Не удалось сменить тир (' + resp.status + ')';
+    err.classList.remove('hidden');
+  }
+
+
+  function startDelete() {
+    document.getElementById('delete-btn').classList.add('hidden');
+    document.getElementById('delete-confirm').classList.remove('hidden');
+  }
+  function cancelDelete() {
+    document.getElementById('delete-confirm').classList.add('hidden');
+    document.getElementById('delete-btn').classList.remove('hidden');
+  }
+  async function confirmDelete() {
+    const r = await fetch('/api/users/' + TG_ID, { method: 'DELETE' });
+    if (r.ok) {
+      window.location.href = '/subscribers';
+    } else {
+      cancelDelete();
+    }
+  }
+
+</script>
+{% endblock %}

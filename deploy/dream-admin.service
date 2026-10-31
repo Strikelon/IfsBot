@@ -1,0 +1,44 @@
+[Unit]
+Description=IfsBot admin panel (FastAPI)
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+# Crash-loop guard
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=dream-bot
+Group=dream-bot
+WorkingDirectory=/opt/dream-bot
+EnvironmentFile=/opt/dream-bot/.env
+# Слушает ТОЛЬКО loopback — доступ снаружи только через SSH-туннель
+# (ssh -L 8081:localhost:8081 root@<vps>). Порт 8081 (8080 занят ботом).
+ExecStart=/usr/local/bin/uv run uvicorn admin.main:app --app-dir src --host 127.0.0.1 --port 8081
+Restart=on-failure
+RestartSec=5s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dream-admin
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/dream-bot
+
+# Resource limits
+MemoryMax=1G
+TasksMax=200
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

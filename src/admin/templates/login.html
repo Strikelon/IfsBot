@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — Dream Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="w-full max-w-sm bg-white rounded-lg shadow p-6">
+    <h1 class="text-xl font-semibold mb-4 text-center">Dream Admin</h1>
+    {% if error %}
+    <p class="mb-4 text-sm text-red-600 text-center">{{ error }}</p>
+    {% endif %}
+    <form method="post" action="/login" class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1" for="username">Логин</label>
+        <input id="username" name="username" type="text" autofocus
+               class="w-full border border-gray-300 rounded px-3 py-2">
+      </div>
+      <div>
+        <label class="block text-sm mb-1" for="password">Пароль</label>
+        <input id="password" name="password" type="password"
+               class="w-full border border-gray-300 rounded px-3 py-2">
+      </div>
+      <button type="submit"
+              class="w-full bg-gray-900 text-white rounded px-3 py-2 hover:bg-gray-700">
+        Войти
+      </button>
+    </form>
+  </div>
+</body>
+</html>

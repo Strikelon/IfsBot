@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Project
+.env
+# Бэкапы .env: тот же набор секретов, что в самом .env.
+.env.bak-*
+.env.*.bak
+*.log
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+dev.db
+media/
+
+# analytics report artifacts
+analytics_out/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

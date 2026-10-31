@@ -1,0 +1,43 @@
+[Unit]
+Description=IfsBot Telegram bot
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+# Crash-loop guard: если бот рестартует > 5 раз за 5 минут — оставить в failed,
+# чтобы не забить CPU/логи бесконечными retry на детерминированном баге.
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Service]
+Type=simple
+User=dream-bot
+Group=dream-bot
+WorkingDirectory=/opt/dream-bot
+EnvironmentFile=/opt/dream-bot/.env
+ExecStart=/usr/local/bin/uv run uvicorn app.main:app --app-dir src --host 127.0.0.1 --port 8080
+Restart=on-failure
+RestartSec=5s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dream-bot
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/dream-bot
+
+# Resource limits
+MemoryMax=2G
+TasksMax=200
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

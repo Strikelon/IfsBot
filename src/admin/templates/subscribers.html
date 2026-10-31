@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from "_tier_badge.html" import tier_badge %}
+{% block title %}Подписчики — Dream Admin{% endblock %}
+
+{% macro sort_link(key, label) %}
+  {%- set new_desc = 'false' if (sort == key and desc) else 'true' -%}
+  <a href="?sort={{ key }}&desc={{ new_desc }}&search={{ search }}" class="hover:underline">
+    {{ label }}{% if sort == key %}{% if desc %} ↓{% else %} ↑{% endif %}{% endif %}
+  </a>
+{% endmacro %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-semibold">Подписчики <span class="text-gray-400 text-base">({{ total }})</span></h1>
+</div>
+
+<form method="get" class="mb-4">
+  <input type="text" name="search" value="{{ search }}" placeholder="Поиск по имени или @username"
+         class="border border-gray-300 rounded px-3 py-2 w-72">
+  <button type="submit" class="bg-gray-200 rounded px-3 py-2 hover:bg-gray-300 text-sm">Найти</button>
+</form>
+
+<div class="bg-white rounded-lg shadow overflow-x-auto">
+  <table class="min-w-full text-sm">
+    <thead class="bg-gray-50 text-left text-gray-500">
+      <tr>
+        <th class="px-4 py-3">Имя</th>
+        <th class="px-4 py-3">{{ sort_link('dreams', 'Снов / Вопросов') }}</th>
+        <th class="px-4 py-3">{{ sort_link('situations', 'Ситуаций / Вопросов') }}</th>
+        <th class="px-4 py-3">{{ sort_link('conflicts', 'Конфликтов / Вопросов') }}</th>
+        <th class="px-4 py-3">{{ sort_link('cost', 'Нейросеть') }}</th>
+        <th class="px-4 py-3">{{ sort_link('paywall', 'Пейвол') }}</th>
+        <th class="px-4 py-3">{{ sort_link('interview', 'Интервью') }}</th>
+        <th class="px-4 py-3">{{ sort_link('last_seen', 'Последний контакт') }}</th>
+        <th class="px-4 py-3">{{ sort_link('created', 'Подписался') }}</th>
+        <th class="px-4 py-3">{{ sort_link('status', 'Статус') }}</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for row in rows %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3">
+          {% set badge = access_badge(row.access_tier, row.access_tier_until) %}
+          <div class="flex items-center gap-3">
+            <span class="relative inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-semibold"
+                  style="background-color: {{ color(row.display_name) }}">{{ initials(row.display_name) }}<img
+                  src="/users/{{ row.telegram_user_id }}/avatar" alt=""
+                  class="absolute inset-0 w-8 h-8 rounded-full object-cover"
+                  onerror="this.remove()">{{ tier_badge(badge, 'sm') }}{{ tier_badge(paywall_badge(row.paywall_shown_at), 'sm') }}{{ tier_badge(interview_badge(row.interview_passed_at), 'sm') }}</span>
+            <div>
+              <a href="/users/{{ row.telegram_user_id }}" class="font-medium text-gray-900 hover:underline">
+                {{ row.display_name or '—' }}
+              </a>
+              {% if row.username %}
+              <div class="text-xs text-gray-400">
+                <a href="https://t.me/{{ row.username }}" class="hover:underline">@{{ row.username }}</a>
+              </div>
+              {% endif %}
+              {% if row.access_tier == 'free_interview' %}
+              <div class="text-xs text-gray-400">{{ badge.title }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-3">{{ row.dreams_count }} / {{ row.questions_count }}</td>
+        <td class="px-4 py-3">{{ row.situations_count }} / {{ row.situation_questions_count }}</td>
+        <td class="px-4 py-3">{{ row.conflicts_count }} / {{ row.conflict_questions_count }}</td>
+        <td class="px-4 py-3">{{ fmt_usd(row.cost_usd) }}</td>
+        <td class="px-4 py-3">{% if row.paywall_shown_at %}✅{% else %}—{% endif %}</td>
+        <td class="px-4 py-3">
+          {% if row.interview_passed_at %}✅ {{ row.interview_passed_at.strftime('%d.%m.%Y') }}{% else %}—{% endif %}
+        </td>
+        <td class="px-4 py-3">{{ fmt_date(row.last_seen_at) }}</td>
+        <td class="px-4 py-3">{{ row.created_at.strftime('%d.%m.%Y') }}</td>
+        <td class="px-4 py-3">
+          {% if row.is_active %}🟢 Активен{% else %}⚪ Неактивен{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="px-4 py-6 text-center text-gray-400">Нет подписчиков</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="flex items-center justify-between mt-4 text-sm">
+  <div>
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&sort={{ sort }}&desc={{ desc }}&search={{ search }}"
+       class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">← Назад</a>
+    {% endif %}
+  </div>
+  <div>Страница {{ page }}</div>
+  <div>
+    {% if total > page * per_page %}
+    <a href="?page={{ page + 1 }}&sort={{ sort }}&desc={{ desc }}&search={{ search }}"
+       class="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300">Вперёд →</a>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
